@@ -1,0 +1,256 @@
+<%# Redmine Modern Layout - Copyright (C) 2026 Victor Cerqueira - GPL v3 or later -%>
+<% html_title l(:mui_appearance) %>
+<% s = @settings %>
+<% content_for :header_tags do %>
+  <%= javascript_include_tag 'appearance', plugin: 'redmine_modern_layout' %>
+<% end %>
+
+<h2><%= l(:mui_appearance) %></h2>
+
+<%= form_tag(modern_layout_appearance_path, multipart: true, id: 'mui-appearance-form') do %>
+<div class="mui-appearance-tabs" role="tablist">
+  <ul>
+    <% [['identity', :mui_section_identity], ['colors', :mui_section_colors], ['typography', :mui_section_typography],
+        ['shape', :mui_section_shape], ['theme', :mui_section_theme], ['login', :mui_section_login],
+        ['overview', :mui_section_dashboard], ['footer', :mui_section_footer]].each do |key, label| %>
+      <li><a href="#<%= key %>" id="mui-tab-<%= key %>" data-mui-tab-link="<%= key %>"><%= l(label) %></a></li>
+    <% end %>
+  </ul>
+</div>
+<div class="mui-appearance">
+  <div class="mui-appearance-form">
+
+    <fieldset class="box tabular" data-mui-tab="identity">
+      <legend><%= l(:mui_section_identity) %></legend>
+      <p>
+        <label for="settings_app_name"><%= l(:mui_app_name) %></label>
+        <%= text_field_tag 'settings[app_name]', s['app_name'], size: 40, maxlength: 60, placeholder: Setting.app_title %>
+        <em class="info"><%= l(:mui_app_name_info, title: Setting.app_title) %></em>
+      </p>
+      <p>
+        <label for="settings_show_name"><%= l(:mui_show_name) %></label>
+        <%= hidden_field_tag 'settings[show_name]', '0', id: nil %>
+        <%= check_box_tag 'settings[show_name]', '1', s['show_name'] == '1' %>
+      </p>
+      <% { 'logo' => :mui_logo, 'favicon' => :mui_favicon }.each do |kind, label| %>
+        <p class="mui-upload" data-kind="<%= kind %>">
+          <label for="files_<%= kind %>"><%= l(label) %></label>
+          <% if s[kind].present? %>
+            <span class="mui-upload-current">
+              <%= image_tag modern_layout_asset_path(kind: kind, name: s[kind]), alt: '', class: "mui-upload-img mui-upload-#{kind}" %>
+              <label class="mui-inline"><%= check_box_tag "remove[#{kind}]", '1', false, id: "remove_#{kind}" %> <%= l(:mui_remove) %></label>
+            </span>
+          <% end %>
+          <%= file_field_tag "files[#{kind}]", accept: '.png,.jpg,.jpeg,.gif,.webp,.svg,.ico' %>
+          <em class="info"><%= l(:"#{label}_info") %></em>
+        </p>
+      <% end %>
+    </fieldset>
+
+    <fieldset class="box tabular mui-login-section" data-mui-tab="login">
+      <legend><%= l(:mui_section_login) %></legend>
+      <p>
+        <label><%= l(:mui_login_style) %></label>
+        <span class="mui-login-styles">
+          <% RedmineModernLayout::Config::LOGIN_STYLES.each do |style| %>
+            <label class="mui-login-style">
+              <%= radio_button_tag 'settings[login_style]', style, s['login_style'] == style %>
+              <span class="mui-ls-thumb mui-ls-<%= style %>" aria-hidden="true"><i></i><b></b><em></em></span>
+              <span class="mui-ls-name"><%= l(:"mui_login_style_#{style}") %></span>
+              <small><%= l(:"mui_login_style_#{style}_info") %></small>
+            </label>
+          <% end %>
+        </span>
+      </p>
+      <p>
+        <label></label>
+        <%= link_to l(:mui_login_preview), modern_layout_login_preview_path(style: s['login_style']),
+                    class: 'mui-btn-preview', id: 'mui-login-preview-link', target: '_blank', rel: 'noopener',
+                    data: { base: modern_layout_login_preview_path } %>
+        <em class="info"><%= l(:mui_login_preview_info) %></em>
+      </p>
+      <p>
+        <label for="settings_login_title"><%= l(:mui_login_title) %></label>
+        <%= text_field_tag 'settings[login_title]', s['login_title'], size: 40, maxlength: 80, placeholder: l(:mui_login_title_default) %>
+      </p>
+      <p>
+        <label for="settings_login_subtitle"><%= l(:mui_login_subtitle) %></label>
+        <%= text_field_tag 'settings[login_subtitle]', s['login_subtitle'], size: 60, maxlength: 160, placeholder: l(:mui_login_subtitle_default) %>
+      </p>
+      <p>
+        <label for="settings_login_headline"><%= l(:mui_login_headline) %></label>
+        <%= text_field_tag 'settings[login_headline]', s['login_headline'], size: 60, maxlength: 120, placeholder: l(:mui_login_headline_default) %>
+        <em class="info"><%= l(:mui_login_headline_info) %></em>
+      </p>
+      <p>
+        <label for="settings_login_text"><%= l(:mui_login_text) %></label>
+        <%= text_area_tag 'settings[login_text]', s['login_text'], rows: 3, cols: 60, maxlength: 300, placeholder: l(:mui_login_text_default) %>
+        <em class="info"><%= l(:mui_login_text_info) %></em>
+      </p>
+      <p>
+        <label for="settings_login_features"><%= l(:mui_login_features) %></label>
+        <%= text_area_tag 'settings[login_features]', s['login_features'], rows: 4, cols: 60, maxlength: 400,
+                          placeholder: [l(:mui_login_feature_1), l(:mui_login_feature_2), l(:mui_login_feature_3)].join("\n") %>
+        <em class="info"><%= l(:mui_login_features_info) %></em>
+      </p>
+      <% { 'login_bg' => :mui_login_bg, 'partners' => :mui_partners }.each do |kind, label| %>
+        <p class="mui-upload" data-kind="<%= kind %>">
+          <label for="files_<%= kind %>"><%= l(label) %></label>
+          <% if s[kind].present? %>
+            <span class="mui-upload-current">
+              <%= image_tag modern_layout_asset_path(kind: kind, name: s[kind]), alt: '', class: "mui-upload-img mui-upload-#{kind}" %>
+              <label class="mui-inline"><%= check_box_tag "remove[#{kind}]", '1', false, id: "remove_#{kind}" %> <%= l(:mui_remove) %></label>
+            </span>
+          <% end %>
+          <%= file_field_tag "files[#{kind}]", accept: '.png,.jpg,.jpeg,.gif,.webp,.svg' %>
+          <em class="info"><%= l(:"#{label}_info") %></em>
+        </p>
+      <% end %>
+    </fieldset>
+
+    <fieldset class="box tabular" data-mui-tab="colors">
+      <legend><%= l(:mui_section_colors) %></legend>
+      <p>
+        <label><%= l(:mui_presets) %></label>
+        <span class="mui-presets">
+          <% RedmineModernLayout::Config::PRESETS.each do |name, colors| %>
+            <button type="button" class="mui-preset" data-colors="<%= colors.to_json %>" title="<%= name.capitalize %>">
+              <span style="background: <%= colors['nav_bg'] %>"></span><span style="background: <%= colors['primary'] %>"></span>
+            </button>
+          <% end %>
+        </span>
+      </p>
+      <% { 'primary' => :mui_primary, 'secondary' => :mui_secondary, 'nav_bg' => :mui_nav_bg, 'page_bg' => :mui_page_bg }.each do |key, label| %>
+        <p>
+          <label for="settings_<%= key %>"><%= l(label) %></label>
+          <input type="color" id="settings_<%= key %>" name="settings[<%= key %>]" value="<%= s[key] %>" class="mui-color" data-key="<%= key %>">
+          <code class="mui-color-code"><%= s[key] %></code>
+        </p>
+      <% end %>
+    </fieldset>
+
+    <fieldset class="box tabular" data-mui-tab="typography">
+      <legend><%= l(:mui_section_typography) %></legend>
+      <p>
+        <label for="settings_font"><%= l(:mui_font) %></label>
+        <%= select_tag 'settings[font]',
+                       options_for_select(RedmineModernLayout::Config::FONTS.keys.map { |f| [f == 'system' ? l(:mui_font_system) : f, f] }, s['font']),
+                       id: 'settings_font' %>
+        <em class="info"><%= l(:mui_font_info) %></em>
+      </p>
+      <p>
+        <label for="settings_font_size"><%= l(:mui_font_size) %></label>
+        <input type="range" id="settings_font_size" name="settings[font_size]" min="12" max="17" step="1" value="<%= s['font_size'] %>">
+        <output for="settings_font_size" class="mui-range-out"><%= s['font_size'] %>px</output>
+      </p>
+    </fieldset>
+
+    <fieldset class="box tabular" data-mui-tab="shape">
+      <legend><%= l(:mui_section_shape) %></legend>
+      <p>
+        <label for="settings_radius"><%= l(:mui_radius) %></label>
+        <input type="range" id="settings_radius" name="settings[radius]" min="0" max="20" step="1" value="<%= s['radius'] %>">
+        <output for="settings_radius" class="mui-range-out"><%= s['radius'] %>px</output>
+      </p>
+      <p>
+        <label><%= l(:mui_density) %></label>
+        <% %w[comfortable compact].each do |d| %>
+          <label class="mui-inline"><%= radio_button_tag 'settings[density]', d, s['density'] == d %> <%= l(:"mui_density_#{d}") %></label>
+        <% end %>
+      </p>
+    </fieldset>
+
+    <fieldset class="box tabular" data-mui-tab="theme">
+      <legend><%= l(:mui_section_theme) %></legend>
+      <p>
+        <label><%= l(:mui_theme_mode) %></label>
+        <% %w[light dark auto].each do |m| %>
+          <label class="mui-inline"><%= radio_button_tag 'settings[theme_mode]', m, s['theme_mode'] == m %> <%= l(:"mui_theme_#{m}") %></label>
+        <% end %>
+      </p>
+      <p>
+        <label for="settings_user_theme_switch"><%= l(:mui_user_theme_switch) %></label>
+        <%= hidden_field_tag 'settings[user_theme_switch]', '0', id: nil %>
+        <%= check_box_tag 'settings[user_theme_switch]', '1', s['user_theme_switch'] == '1' %>
+      </p>
+    </fieldset>
+
+    <fieldset class="box tabular" data-mui-tab="overview">
+      <legend><%= l(:mui_section_dashboard) %></legend>
+      <p>
+        <label for="settings_dashboard"><%= l(:mui_dashboard_enabled) %></label>
+        <%= hidden_field_tag 'settings[dashboard]', '0', id: nil %>
+        <%= check_box_tag 'settings[dashboard]', '1', s['dashboard'] == '1' %>
+        <em class="info"><%= l(:mui_dashboard_enabled_info) %></em>
+      </p>
+      <p>
+        <label for="settings_dashboard_field"><%= l(:mui_dashboard_field) %></label>
+        <%= select_tag 'settings[dashboard_field]',
+                       options_for_select([[l(:mui_dashboard_field_none), '']] +
+                                          IssueCustomField.where(field_format: RedmineModernLayout::Dashboard::FIELD_FORMATS).sorted.map { |cf| [cf.name, cf.id.to_s] },
+                                          s['dashboard_field']),
+                       id: 'settings_dashboard_field' %>
+        <em class="info"><%= l(:mui_dashboard_field_info) %></em>
+      </p>
+      <p>
+        <label for="settings_overview_time"><%= l(:mui_overview_time) %></label>
+        <%= hidden_field_tag 'settings[overview_time]', '0', id: nil %>
+        <%= check_box_tag 'settings[overview_time]', '1', s['overview_time'] == '1' %>
+        <em class="info"><%= l(:mui_overview_time_info) %></em>
+      </p>
+    </fieldset>
+
+    <fieldset class="box tabular" data-mui-tab="footer">
+      <legend><%= l(:mui_section_footer) %></legend>
+      <p>
+        <label for="settings_footer_text"><%= l(:mui_footer_text) %></label>
+        <%= text_area_tag 'settings[footer_text]', s['footer_text'], rows: 2, cols: 60, maxlength: 500 %>
+      </p>
+      <p>
+        <label for="settings_footer_links"><%= l(:mui_footer_links) %></label>
+        <%= text_area_tag 'settings[footer_links]', s['footer_links'], rows: 3, cols: 60, placeholder: "Portal | https://www.example.org\nHelp desk | mailto:support@example.org" %>
+        <em class="info"><%= l(:mui_footer_links_info) %></em>
+      </p>
+      <p>
+        <label for="settings_footer_partners"><%= l(:mui_footer_partners) %></label>
+        <%= hidden_field_tag 'settings[footer_partners]', '0', id: nil %>
+        <%= check_box_tag 'settings[footer_partners]', '1', s['footer_partners'] == '1' %>
+        <em class="info"><%= l(:mui_footer_partners_info) %></em>
+      </p>
+      <p>
+        <label for="settings_show_powered_by"><%= l(:mui_show_powered_by) %></label>
+        <%= hidden_field_tag 'settings[show_powered_by]', '0', id: nil %>
+        <%= check_box_tag 'settings[show_powered_by]', '1', s['show_powered_by'] == '1' %>
+      </p>
+    </fieldset>
+
+    <p><%= submit_tag l(:button_save), class: 'mui-btn-save' %></p>
+  </div>
+
+  <aside class="mui-appearance-preview" data-mui-preview-tabs="identity colors typography shape theme" aria-label="<%= l(:mui_preview) %>">
+    <div class="mui-preview-title"><%= l(:mui_preview) %></div>
+    <div class="mui-preview" id="mui-preview">
+      <div class="mui-pv-nav">
+        <div class="mui-pv-brand">
+          <% if s['logo'].present? %>
+            <%= image_tag modern_layout_asset_path(kind: 'logo', name: s['logo']), alt: '', class: 'mui-pv-logo' %>
+          <% else %>
+            <span class="mui-pv-badge"><%= RedmineModernLayout::Config.app_name.to_s[0].to_s.upcase %></span>
+          <% end %>
+          <span class="mui-pv-name"><%= RedmineModernLayout::Config.app_name %></span>
+        </div>
+        <span class="mui-pv-link mui-pv-selected"></span><span class="mui-pv-link"></span><span class="mui-pv-link"></span>
+      </div>
+      <div class="mui-pv-main">
+        <div class="mui-pv-top"></div>
+        <div class="mui-pv-card">
+          <div class="mui-pv-h">Aa — <%= l(:label_issue_plural) %></div>
+          <div class="mui-pv-row"><span class="mui-pv-pill"></span><span class="mui-pv-line"></span></div>
+          <div class="mui-pv-row"><span class="mui-pv-pill"></span><span class="mui-pv-line"></span></div>
+          <span class="mui-pv-btn"><%= l(:button_save) %></span>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+<% end %>

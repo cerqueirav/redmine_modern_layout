@@ -1,0 +1,29 @@
+<%# Redmine Modern Layout - Copyright (C) 2026 Victor Cerqueira - GPL v3 or later -%>
+<section class="mui-subprojects">
+  <h3><%= mui_icon('folder', size: 16) %><%= l(:label_subproject_plural) %> <span class="mui-count"><%= subprojects.size %></span></h3>
+  <div class="mui-subproject-grid">
+    <% subprojects.each do |child, n| %>
+      <% closed = n[:total] - n[:open] %>
+      <% pct = n[:total] > 0 ? (closed * 100.0 / n[:total]).round : 0 %>
+      <%= link_to project_path(child), class: "mui-subproject#{' mui-subproject-closed' unless child.active?}" do %>
+        <span class="mui-subproject-head">
+          <%= mui_badge(child.name, child.identifier) %>
+          <span class="mui-subproject-name"><%= child.name %></span>
+          <% unless child.active? %><span class="mui-subproject-status"><%= l(:project_status_closed) %></span><% end %>
+        </span>
+        <% if child.short_description.present? %>
+          <span class="mui-subproject-desc"><%= child.short_description.to_s.truncate(110) %></span>
+        <% end %>
+        <span class="mui-subproject-progress">
+          <span class="mui-hbar-track"><span style="width: <%= pct %>%"></span></span>
+          <span class="mui-subproject-pct"><%= pct %>%</span>
+        </span>
+        <span class="mui-subproject-stats">
+          <span><strong><%= n[:open] %></strong> <%= l(:mui_dash_open).downcase %></span>
+          <span><strong><%= closed %></strong> <%= l(:mui_dash_closed) %></span>
+          <% if n[:overdue] > 0 %><span class="mui-due-late"><strong><%= n[:overdue] %></strong> <%= l(:mui_dash_overdue).downcase %></span><% end %>
+        </span>
+      <% end %>
+    <% end %>
+  </div>
+</section>

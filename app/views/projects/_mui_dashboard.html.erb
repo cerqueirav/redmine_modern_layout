@@ -1,0 +1,179 @@
+<%# Redmine Modern Layout - Copyright (C) 2026 Victor Cerqueira - GPL v3 or later -%>
+<%# Project overview dashboard (Redmine Modern Layout). Every link opens the matching issue list. %>
+<% c = dash.counts %>
+<% open_filter = { 'status_id' => ['o'] } %>
+<div class="mui-dash">
+  <div class="mui-kpis">
+    <% [
+         [:open, :mui_dash_open, '', open_filter],
+         [:overdue, :mui_dash_overdue, 'danger', open_filter.merge('due_date' => ['<t-', ['1']])],
+         [:due_soon, :mui_dash_due_soon, 'warning', open_filter.merge('due_date' => ['><t+', ['7']])],
+         [:unassigned, :mui_dash_unassigned, '', open_filter.merge('assigned_to_id' => ['!*'])],
+         [:closed_month, :mui_dash_closed_month, 'success', { 'status_id' => ['c'], 'closed_on' => ['m'] }]
+       ].each do |key, label, tone, filters| %>
+      <%= link_to project_issues_path(@project, mui_issue_filters(filters)), class: "mui-kpi#{" mui-kpi-#{tone}" if tone.present? && c[key] > 0}" do %>
+        <span class="mui-kpi-label"><%= l(label) %></span>
+        <span class="mui-kpi-value"><%= c[key] %></span>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="mui-dash-grid">
+    <section class="mui-dash-card">
+      <h3><%= mui_icon('activity', size: 16) %><%= l(:mui_dash_by_status) %></h3>
+      <% statuses = dash.by_status %>
+      <% if statuses.empty? %>
+        <p class="mui-dash-empty"><%= l(:mui_dash_empty) %></p>
+      <% else %>
+        <div class="mui-donut-row">
+          <% total = statuses.sum { |_, n, _| n } %>
+          <% acc = 0 %>
+          <% stops = statuses.map { |_, n, color| from = acc; acc += n * 100.0 / total; "#{color} #{from.round(2)}% #{acc.round(2)}%" } %>
+          <div class="mui-donut" style="background: conic-gradient(<%= stops.join(', ') %>)">
+            <div><strong><%= total %></strong><span><%= l(:mui_dash_open_short) %></span></div>
+          </div>
+          <ul class="mui-legend">
+            <% statuses.each do |status, n, color| %>
+              <li>
+                <%= link_to project_issues_path(@project, mui_issue_filters('status_id' => ['=', [status.id]])) do %>
+                  <span class="mui-dot" style="background: <%= color %>"></span><span class="mui-legend-name"><%= status.name %></span>
+                <% end %>
+                <span class="mui-legend-n"><%= n %></span>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+    </section>
+
+    <section class="mui-dash-card">
+      <h3><%= mui_icon('gantt', size: 16) %><%= l(:mui_dash_trend) %></h3>
+      <% trend = dash.trend %>
+      <% top = [trend.map { |_, a, b| [a, b].max }.max.to_i, 1].max %>
+      <div class="mui-trend">
+        <% trend.each do |week, created, closed| %>
+          <div class="mui-trend-col" title="<%= format_date(week) %>: <%= l(:mui_dash_created) %> <%= created %>, <%= l(:mui_dash_closed) %> <%= closed %>">
+            <div class="mui-trend-bars">
+              <span class="mui-trend-created" style="height: <%= (created * 100.0 / top).round %>%"></span>
+              <span class="mui-trend-closed" style="height: <%= (closed * 100.0 / top).round %>%"></span>
+            </div>
+            <span class="mui-trend-label"><%= week.strftime('%d/%m') %></span>
+          </div>
+        <% end %>
+      </div>
+      <div class="mui-trend-legend">
+        <span><span class="mui-dot mui-trend-created"></span><%= l(:mui_dash_created) %></span>
+        <span><span class="mui-dot mui-trend-closed"></span><%= l(:mui_dash_closed) %></span>
+      </div>
+    </section>
+
+    <% [(dash.field ? [l(:mui_dash_by_field, name: dash.field.name), 'flag', dash.by_field, dash.field.is_filter?,
+                       project_issues_path(@project, set_filter: 1, group_by: "cf_#{dash.field.id}")] : nil),
+        [l(:mui_dash_by_tracker), 'list', dash.by_tracker, true,
+         project_issues_report_details_path(@project, detail: 'tracker')]].compact.each do |title, icon, rows, linkable, all_url| %>
+    <section class="mui-dash-card">
+      <h3><%= mui_icon(icon, size: 16) %><%= title %><%= link_to l(:mui_dash_view_all), all_url, class: 'mui-dash-all' %></h3>
+      <% if rows.empty? %>
+        <p class="mui-dash-empty"><%= l(:mui_dash_empty) %></p>
+      <% else %>
+        <% top = rows.map { |_, n, _| n }.max %>
+        <div class="mui-hbars">
+          <% rows.each do |label, n, filter| %>
+            <% bar = capture do %>
+              <span class="mui-hbar-head"><span><%= label == :others ? l(:mui_dash_others) : format_object(label, false) %></span><span><%= n %></span></span>
+              <span class="mui-hbar-track"><span style="width: <%= (n * 100.0 / top).round %>%"></span></span>
+            <% end %>
+            <% if label == :others %>
+              <span class="mui-hbar mui-hbar-others"><%= bar %></span>
+            <% elsif linkable %>
+              <%= link_to bar, project_issues_path(@project, mui_issue_filters(open_filter.merge(filter.transform_values { |v| ['=', [v]] }))), class: 'mui-hbar' %>
+            <% else %>
+              <span class="mui-hbar"><%= bar %></span>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+    <% end %>
+
+    <section class="mui-dash-card">
+      <h3><%= mui_icon('user', size: 16) %><%= l(:mui_dash_by_assignee) %><%= link_to l(:mui_dash_view_all), project_issues_report_details_path(@project, detail: 'assigned_to'), class: 'mui-dash-all' %></h3>
+      <% rows = dash.by_assignee %>
+      <% if rows.empty? %>
+        <p class="mui-dash-empty"><%= l(:mui_dash_empty) %></p>
+      <% else %>
+        <% top = rows.map(&:last).max %>
+        <div class="mui-hbars mui-hbars-people">
+          <% rows.each do |principal, n| %>
+            <% if principal == :others %>
+              <span class="mui-hbar mui-hbar-others">
+                <span class="mui-hbar-head"><span><%= l(:mui_dash_others) %></span><span><%= n %></span></span>
+                <span class="mui-hbar-track"><span style="width: <%= (n * 100.0 / top).round %>%"></span></span>
+              </span>
+              <% next %>
+            <% end %>
+            <% filter = principal ? ['=', [principal.id]] : ['!*'] %>
+            <%= link_to project_issues_path(@project, mui_issue_filters(open_filter.merge('assigned_to_id' => filter))), class: "mui-hbar#{' mui-hbar-warning' unless principal}" do %>
+              <span class="mui-hbar-head"><span><%= principal ? principal.name : l(:mui_dash_unassigned) %></span><span><%= n %></span></span>
+              <span class="mui-hbar-track"><span style="width: <%= (n * 100.0 / top).round %>%"></span></span>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+
+    <section class="mui-dash-card">
+      <h3><%= mui_icon('calendar', size: 16) %><%= l(:mui_dash_deadlines) %></h3>
+      <% issues = dash.deadlines %>
+      <% if issues.empty? %>
+        <p class="mui-dash-empty"><%= l(:mui_dash_no_deadlines) %></p>
+      <% else %>
+        <ul class="mui-dash-list">
+          <% issues.each do |issue| %>
+            <% days = (issue.due_date - dash.today).to_i %>
+            <li>
+              <%= link_to "##{issue.id} #{issue.subject}", issue_path(issue), class: 'mui-dash-list-title', title: issue.subject %>
+              <% if days < 0 %>
+                <span class="mui-due mui-due-late"><%= l(:mui_dash_late, count: -days) %></span>
+              <% elsif days == 0 %>
+                <span class="mui-due mui-due-soon"><%= l(:mui_dash_today) %></span>
+              <% elsif days == 1 %>
+                <span class="mui-due mui-due-soon"><%= l(:mui_dash_tomorrow) %></span>
+              <% else %>
+                <span class="mui-due"><%= format_date(issue.due_date) %></span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    </section>
+
+    <section class="mui-dash-card">
+      <h3><%= mui_icon('activity', size: 16) %><%= l(:mui_dash_activity) %></h3>
+      <% events = dash.activity %>
+      <% if events.empty? %>
+        <p class="mui-dash-empty"><%= l(:mui_dash_no_activity) %></p>
+      <% else %>
+        <ul class="mui-dash-list">
+          <% events.each do |event| %>
+            <li>
+              <%= link_to event.event_title, event.event_url, class: 'mui-dash-list-title', title: event.event_title %>
+              <span class="mui-due" title="<%= format_time(event.event_datetime) %>"><%= event.event_author.to_s.split.first %> · <%= l(:mui_dash_ago, value: distance_of_time_in_words(Time.now, event.event_datetime)) %></span>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    </section>
+  </div>
+
+  <p class="mui-dash-links">
+    <%= link_to l(:label_issue_view_all), project_issues_path(@project, set_filter: 1) %>
+    · <%= link_to l(:field_summary), project_issues_report_path(@project) %>
+    <% if User.current.allowed_to?(:view_calendar, @project, global: true) %>
+      · <%= link_to l(:label_calendar), project_calendar_path(@project) %>
+    <% end %>
+    <% if User.current.allowed_to?(:view_gantt, @project, global: true) %>
+      · <%= link_to l(:label_gantt), project_gantt_path(@project) %>
+    <% end %>
+  </p>
+</div>

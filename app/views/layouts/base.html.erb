@@ -1,0 +1,316 @@
+<%# Redmine Modern Layout - Copyright (C) 2026 Victor Cerqueira - GPL v3 or later.
+    Based on app/views/layouts/base.html.erb of Redmine 6.0 (Copyright (C) Jean-Philippe Lang, GPL v2 or later). -%>
+<!DOCTYPE html>
+<% mui = RedmineModernLayout::Config.settings %>
+<html lang="<%= current_language %>" class="mui-density-<%= mui['density'] %>" data-mui-mode="<%= mui['theme_mode'] %>" data-mui-theme="<%= mui['theme_mode'] == 'dark' ? 'dark' : 'light' %>" data-mui-user-switch="<%= mui['user_theme_switch'] %>">
+<head>
+<meta charset="utf-8" />
+<title><%= html_title %></title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="<%= Redmine::Info.app_name %>" />
+<meta name="keywords" content="issue,bug,tracker" />
+<%= csrf_meta_tag %>
+<%= mui_favicon_tag %>
+<%= stylesheet_link_tag 'jquery/jquery-ui-1.13.2', 'tribute-5.1.3', 'application', 'responsive', :media => 'all' %>
+<%= stylesheet_link_tag 'rtl', :media => 'all' if l(:direction) == 'rtl' %>
+<%# Redmine 6.1+: JavaScript modules (importmap) and translations used by JavaScript. %>
+<%= javascript_importmap_tags if respond_to?(:javascript_importmap_tags) %>
+<%= javascript_heads %>
+<%= heads_for_theme %>
+<%= heads_for_i18n if respond_to?(:heads_for_i18n) %>
+<%= heads_for_auto_complete(@project) %>
+<%= call_hook :view_layouts_base_html_head %>
+<!-- page specific tags -->
+<%= yield :header_tags -%>
+<%= stylesheet_link_tag 'modern_layout', plugin: 'redmine_modern_layout', media: 'all' %>
+<%= tag(:link, rel: 'stylesheet', media: 'all', href: modern_layout_theme_path(digest: RedmineModernLayout::Config.digest)) %>
+<% if (font_url = RedmineModernLayout::Config.google_font_url) %>
+<%= tag(:link, rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: 'anonymous') %>
+<%= tag(:link, rel: 'stylesheet', href: font_url) %>
+<% end %>
+<%= javascript_include_tag 'modern_layout', plugin: 'redmine_modern_layout' %>
+<%= mui_status_css %>
+<script>(function(d){try{if(localStorage.getItem('mui-nav-collapsed')==='1')d.classList.add('mui-nav-collapsed');var m=(d.dataset.muiUserSwitch==='1'&&localStorage.getItem('mui-theme'))||d.dataset.muiMode;if(m==='auto')m=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';d.dataset.muiTheme=m==='dark'?'dark':'light'}catch(e){}})(document.documentElement)</script>
+</head>
+<body class="<%= body_css_classes %> mui" data-text-formatting="<%= Setting.text_formatting %>">
+<%= call_hook :view_layouts_base_body_top %>
+<% if mui_auth_page? %>
+<% style = mui_login_style %>
+<% app_name = RedmineModernLayout::Config.app_name %>
+<% bg = mui_asset_url('login_bg') %>
+<% partners = mui_asset_url('partners') %>
+<% logo = capture do %>
+  <% if mui['logo'].present? %>
+    <%= image_tag modern_layout_asset_path(kind: 'logo', name: mui['logo']), alt: app_name, class: 'mui-auth-logo-img' %>
+  <% else %>
+    <%= mui_badge(app_name, app_name) %>
+  <% end %>
+  <% if mui['show_name'] == '1' || mui['logo'].blank? %><span class="mui-auth-logo-name"><%= app_name %></span><% end %>
+<% end %>
+<% logo_class = mui['logo'].present? ? 'mui-auth-logo mui-auth-has-img' : 'mui-auth-logo' %>
+<% headline = mui['login_headline'].presence || l(:mui_login_headline_default) %>
+<% intro = mui['login_text'].presence || l(:mui_login_text_default) %>
+<% features = RedmineModernLayout::Config.login_features.presence || [l(:mui_login_feature_1), l(:mui_login_feature_2), l(:mui_login_feature_3)] %>
+<div id="wrapper" class="mui-auth mui-auth-<%= style %><%= ' mui-auth-has-bg' if bg %>"<% if bg %> style="--mui-auth-bg: url('<%= bg %>')"<% end %>
+     data-pw-show="<%= l(:mui_show_password) %>" data-pw-hide="<%= l(:mui_hide_password) %>">
+  <% if %w[split showcase].include?(style) %>
+  <aside class="mui-auth-aside">
+    <span class="mui-auth-pattern" aria-hidden="true"></span>
+    <%= link_to home_path, class: "#{logo_class} mui-auth-logo-chip" do %><%= logo %><% end %>
+    <div class="mui-auth-hero">
+      <h1><%= headline %></h1>
+      <p class="mui-auth-intro"><%= intro %></p>
+      <ul class="mui-auth-features">
+        <% features.each do |feature| %>
+          <li><span class="mui-auth-check"><%= mui_icon('check-mark', size: 14) %></span><%= feature %></li>
+        <% end %>
+      </ul>
+    </div>
+    <div class="mui-auth-mock" aria-hidden="true">
+      <div class="mui-auth-mock-head"><i></i><i></i><i></i></div>
+      <div class="mui-auth-mock-row"><b class="c1"></b><span></span><em class="p1"></em></div>
+      <div class="mui-auth-mock-row"><b class="c2"></b><span class="short"></span><em class="p2"></em></div>
+      <div class="mui-auth-mock-row"><b class="c3"></b><span></span><em class="p3"></em></div>
+      <div class="mui-auth-mock-bar"><span></span></div>
+    </div>
+    <div class="mui-auth-aside-foot">&copy; <%= Date.today.year %> <%= app_name %></div>
+  </aside>
+  <% else %>
+  <span class="mui-auth-pattern" aria-hidden="true"></span>
+  <span class="mui-auth-blob mui-auth-blob-1" aria-hidden="true"></span>
+  <span class="mui-auth-blob mui-auth-blob-2" aria-hidden="true"></span>
+  <% end %>
+
+  <main class="mui-auth-main">
+    <div class="mui-auth-center">
+      <% if %w[banner showcase].include?(style) %>
+        <%= link_to home_path, class: "#{logo_class} mui-auth-logo-lg" do %><%= logo %><% end %>
+      <% end %>
+      <% if style == 'banner' %><p class="mui-auth-tagline"><%= headline %></p><% end %>
+      <div class="mui-auth-box">
+        <% if style == 'card' %>
+          <%= link_to home_path, class: "#{logo_class} mui-auth-logo-card" do %><%= logo %><% end %>
+        <% elsif style == 'split' %>
+          <%= link_to home_path, class: "#{logo_class} mui-auth-logo-mobile" do %><%= logo %><% end %>
+        <% end %>
+        <% if mui_login_page? %>
+          <div class="mui-auth-heading">
+            <h2><%= mui['login_title'].presence || l(:mui_login_title_default) %></h2>
+            <p><%= mui['login_subtitle'].presence || l(:mui_login_subtitle_default) %></p>
+          </div>
+        <% end %>
+        <div id="content">
+          <%= render_flash_messages %>
+          <%= yield %>
+          <%= call_hook :view_layouts_base_content %>
+        </div>
+        <% unless mui_login_page? %>
+          <p class="mui-auth-back"><%= link_to "\u2190 #{l(:label_login)}", signin_path %></p>
+        <% end %>
+      </div>
+      <% if style == 'card' %><p class="mui-auth-tagline"><%= headline %></p><% end %>
+      <% if style == 'showcase' && partners %>
+        <div class="mui-auth-partners-inline"><%= image_tag partners, alt: '' %></div>
+      <% end %>
+    </div>
+    <% if style == 'banner' && partners %>
+      <div class="mui-auth-partners"><%= image_tag partners, alt: '' %></div>
+    <% end %>
+    <footer class="mui-auth-footer">
+      <% if partners && %w[split card].include?(style) && mui['footer_partners'] == '1' %>
+        <div class="mui-footer-partners"><%= image_tag partners, alt: '' %></div>
+      <% end %>
+      <% if mui['footer_text'].present? %><div><%= simple_format(h(mui['footer_text']), {}, wrapper_tag: 'span') %></div><% end %>
+      <% if (links = RedmineModernLayout::Config.footer_links).any? %>
+        <nav><% links.each do |label, url| %><%= link_to label, url, target: (url.start_with?('mailto:') ? nil : '_blank'), rel: 'noopener' %><% end %></nav>
+      <% end %>
+      <% if mui['show_powered_by'] == '1' %>
+        <div class="mui-powered">Powered by <%= link_to Redmine::Info.app_name, Redmine::Info.url, target: '_blank', rel: 'noopener' %></div>
+      <% end %>
+    </footer>
+  </main>
+
+  <div id="ajax-indicator" style="display:none;"><span><%= l(:label_loading) %></span></div>
+  <div id="ajax-modal" style="display:none;"></div>
+<div id="icon-copy-source" style="display: none;"><%= sprite_icon('') %></div>
+</div>
+<% else %>
+<div id="wrapper" class="mui-app">
+<% show_nav = User.current.logged? || !Setting.login_required? %>
+
+<% if show_nav %>
+<aside class="mui-nav" id="mui-nav">
+  <div class="mui-nav-head">
+    <%= link_to home_path, class: 'mui-brand', title: RedmineModernLayout::Config.app_name do %>
+      <% if mui['logo'].present? %>
+        <%= image_tag modern_layout_asset_path(kind: 'logo', name: mui['logo']), alt: RedmineModernLayout::Config.app_name, class: 'mui-brand-logo' %>
+        <%# Collapsed menu: only the icon (uploaded favicon) or the initial of the name. %>
+        <% if mui['favicon'].present? %>
+          <%= image_tag modern_layout_asset_path(kind: 'favicon', name: mui['favicon']), alt: '', class: 'mui-brand-icon' %>
+        <% else %>
+          <span class="mui-brand-icon"><%= mui_badge(RedmineModernLayout::Config.app_name, RedmineModernLayout::Config.app_name) %></span>
+        <% end %>
+      <% else %>
+        <%= mui_badge(RedmineModernLayout::Config.app_name, RedmineModernLayout::Config.app_name) %>
+      <% end %>
+      <% if mui['show_name'] == '1' || mui['logo'].blank? %>
+        <span class="mui-label mui-brand-name"><%= RedmineModernLayout::Config.app_name %></span>
+      <% end %>
+    <% end %>
+    <button type="button" class="mui-icon-btn js-mui-collapse" title="<%= l(:mui_collapse) %>"><%= mui_icon('sidebar') %></button>
+  </div>
+
+  <div class="mui-search">
+    <%= form_tag(search_path(id: @project), method: :get) do %>
+      <%= hidden_field_tag 'scope', default_search_project_scope, id: nil %>
+      <%= hidden_field_tag(controller.default_search_scope, 1, id: nil) if controller.default_search_scope %>
+      <label for="mui-q"><%= mui_icon('search', size: 16) %></label>
+      <%= text_field_tag 'q', @question, id: 'mui-q', placeholder: "#{l(:label_search)}…", autocomplete: 'off', accesskey: accesskey(:quick_search) %>
+      <kbd>/</kbd>
+    <% end %>
+  </div>
+
+  <nav class="mui-nav-section">
+    <%= mui_nav_link l(:label_home), home_path, 'home', selected: controller_name == 'welcome' %>
+    <% if User.current.logged? %>
+      <%= mui_nav_link l(:label_my_page), my_page_path, 'dashboard', selected: controller_name == 'my' && action_name == 'page' %>
+      <%= mui_nav_link l(:mui_my_issues), issues_path(set_filter: 1, assigned_to_id: 'me', sort: 'priority:desc,updated_on:desc'), 'check',
+            selected: controller_name == 'issues' && @project.nil? && params[:assigned_to_id] == 'me' %>
+    <% end %>
+    <%= mui_nav_link l(:label_project_plural), projects_path, 'folder', selected: controller_name == 'projects' && action_name == 'index' %>
+    <% if User.current.admin? %>
+      <%= mui_nav_link l(:label_administration), admin_path, 'shield', selected: controller.is_a?(AdminController) || %w[users groups roles trackers issue_statuses workflows custom_fields enumerations settings auth_sources].include?(controller_name) %>
+    <% end %>
+  </nav>
+
+  <nav class="mui-nav-section">
+    <div class="mui-nav-title">
+      <% if @project && !@project.new_record? %>
+        <%= mui_badge(@project.name, @project.identifier) %>
+        <span class="mui-label"><%= @project.name %></span>
+      <% else %>
+        <span class="mui-label"><%= l(:mui_workspace) %></span>
+      <% end %>
+    </div>
+    <%= mui_main_menu_links(@project) %>
+  </nav>
+
+  <% projects = mui_sidebar_projects %>
+  <% if projects.any? %>
+  <nav class="mui-nav-section mui-nav-projects">
+    <div class="mui-nav-title"><span class="mui-label"><%= l(:mui_projects) %></span></div>
+    <% Project.project_tree(projects) do |p, level| %>
+      <%= link_to project_path(p), class: "mui-nav-link mui-project-link#{' selected' if @project == p}", title: p.name, style: "--level:#{level}" do %>
+        <%= mui_badge(p.name, p.identifier) %><span class="mui-label"><%= p.name %></span>
+      <% end %>
+    <% end %>
+  </nav>
+  <% end %>
+
+  <div class="mui-nav-foot">
+    <% if User.current.logged? %>
+      <%= link_to my_account_path, class: 'mui-user', title: User.current.name do %>
+        <span class="mui-avatar"><%= Setting.gravatar_enabled? ? avatar(User.current, size: 28) : mui_user_initials(User.current) %></span>
+        <span class="mui-label mui-user-name"><%= User.current.name %><small><%= User.current.mail %></small></span>
+      <% end %>
+      <% if mui['user_theme_switch'] == '1' %>
+        <button type="button" class="mui-icon-btn js-mui-theme" title="<%= l(:mui_theme_toggle) %>" aria-label="<%= l(:mui_theme_toggle) %>"><%= mui_icon('moon') %><%= mui_icon('sun') %></button>
+      <% end %>
+      <%= link_to signout_path, method: :post, class: 'mui-icon-btn', title: l(:label_logout) do %><%= mui_icon('logout') %><% end %>
+    <% else %>
+      <%= mui_nav_link l(:label_login), signin_path, 'user' %>
+    <% end %>
+  </div>
+</aside>
+<div class="mui-backdrop js-mui-nav-toggle"></div>
+<% end %>
+
+<div class="mui-main">
+  <header class="mui-topbar">
+    <% if show_nav %>
+      <button type="button" class="mui-icon-btn mui-mobile-toggle js-mui-nav-toggle" title="Menu"><%= mui_icon('menu') %></button>
+    <% end %>
+    <div class="mui-crumbs">
+      <% if @project && !@project.new_record? %>
+        <% @project.ancestors.visible.each do |a| %>
+          <%= link_to a.name, project_path(a) %><span class="sep">/</span>
+        <% end %>
+        <%= link_to @project.name, project_path(@project), class: 'mui-crumb-project' %>
+        <% if (t = mui_page_title).present? && t != @project.name %>
+          <span class="sep">/</span><span class="current"><%= t %></span>
+        <% end %>
+      <% else %>
+        <span class="current"><%= mui_page_title.presence || Setting.app_title %></span>
+      <% end %>
+    </div>
+    <div class="mui-top-actions">
+      <% if User.current.logged? && mui_can_add_issue?(@project) %>
+        <%= link_to (@project && !@project.new_record? ? new_project_issue_path(@project) : new_issue_path), class: 'mui-btn mui-btn-primary' do %>
+          <%= mui_icon('plus', size: 16) %><span><%= l(:label_issue_new) %></span>
+        <% end %>
+      <% end %>
+      <% unless User.current.logged? %>
+        <%= render_menu :account_menu %>
+      <% end %>
+    </div>
+  </header>
+
+  <div id="main" class="<%= sidebar_content? ? 'collapsiblesidebar' : 'nosidebar' %>">
+    <%= javascript_tag "$('#main.collapsiblesidebar').collapsibleSidebar();" if sidebar_content? %>
+    <div id="sidebar">
+      <% if sidebar_content? %>
+        <div id="sidebar-switch-panel" style="visibility: hidden;">
+          <a id="sidebar-switch-button" class="" href="#"><%= sprite_icon("chevrons-right", size: 20, rtl: true) %></a>
+        </div>
+        <%= javascript_tag "$('#sidebar-switch-panel').css('visibility', 'visible');" %>
+      <% end %>
+      <div id="sidebar-wrapper">
+        <%= yield :sidebar %>
+        <%= view_layouts_base_sidebar_hook_response %>
+      </div>
+    </div>
+
+    <div id="content">
+      <%= render_flash_messages %>
+      <%= yield %>
+      <%= call_hook :view_layouts_base_content %>
+      <div style="clear:both;"></div>
+    </div>
+  </div>
+
+  <div id="footer">
+    <% if mui['footer_partners'] == '1' && (partners_url = mui_asset_url('partners')) %>
+      <div class="mui-footer-partners"><%= image_tag partners_url, alt: '' %></div>
+    <% end %>
+    <% if mui['footer_text'].present? %>
+      <div class="mui-footer-text"><%= simple_format(h(mui['footer_text']), {}, wrapper_tag: 'span') %></div>
+    <% end %>
+    <% if (links = RedmineModernLayout::Config.footer_links).any? %>
+      <nav class="mui-footer-links">
+        <% links.each do |label, url| %><%= link_to label, url, target: (url.start_with?('mailto:') ? nil : '_blank'), rel: 'noopener' %><% end %>
+      </nav>
+    <% end %>
+    <% if mui['show_powered_by'] == '1' %>
+      <div class="mui-powered">Powered by <%= link_to Redmine::Info.app_name, Redmine::Info.url, :target => '_blank', :rel => 'noopener' %> &copy; 2006-<%= Date.today.year %> Jean-Philippe Lang</div>
+    <% end %>
+  </div>
+</div>
+
+<div id="ajax-indicator" style="display:none;"><span><%= l(:label_loading) %></span></div>
+<div id="ajax-modal" style="display:none;"></div>
+<div id="icon-copy-source" style="display: none;"><%= sprite_icon('') %></div>
+
+</div>
+<% end %>
+  <% if @mui_login_preview %>
+    <div class="mui-auth-preview-bar">
+      <strong><%= l(:mui_preview) %></strong>
+      <% RedmineModernLayout::Config::LOGIN_STYLES.each do |s| %>
+        <%= link_to l(:"mui_login_style_#{s}"), modern_layout_login_preview_path(style: s), class: ('selected' if s == mui_login_style) %>
+      <% end %>
+      <%= link_to l(:mui_back_to_appearance), modern_layout_appearance_path %>
+    </div>
+  <% end %>
+<%= call_hook :view_layouts_base_body_bottom %>
+</body>
+</html>
