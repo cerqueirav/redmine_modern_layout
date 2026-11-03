@@ -102,7 +102,7 @@
       <% if rows.empty? %>
         <p class="mui-dash-empty"><%= l(:mui_dash_empty) %></p>
       <% else %>
-        <% top = rows.map(&:last).max %>
+        <% top = rows.map(&:last).compact.max %>
         <div class="mui-hbars mui-hbars-people">
           <% rows.each do |principal, n| %>
             <% if principal == :others %>
